@@ -1,0 +1,99 @@
+<!-- AzurePhotos -->
+
+<p class="lead">
+  "You're at 80% of your storage quota," Google warned me yet again. With only
+  17GB total of Drive space, I'd reach 100% in a few short months. What could I
+  do when each of my photos could be 10MB, and I refuse to let my precious
+  photos be compressed to "Storage Saver" quality? Google of course had a
+  solution: Buy one of their Google One plans. For the best deal, pay $100 and
+  get 2TB of storage (and some other features) for the year. However, armed with
+  $150/month of Azure credits from work, I knew I could build a more
+  cost-effective solution and learn more about Azure along the way.
+</p>
+
+<h3 class="text-uppercase text-black">Design</h3>
+<p class="lead">
+  It isn't feasible to copy the more advanced features of Google Photos like
+  photo editing and object recognition. However, the basic features: upload,
+  view, and delete, are all I wanted. A storage account can hold up to 2TiB of
+  photos, and even allows for geo-backup if you're willing to pay a little more
+  for uploaded data to be replicated to another data center. A Flask Web App
+  serves a UI. Checking a box and storing a secret in a Key Vault, Azure
+  provides a login flow via my Microsoft account, making sure all requests to my
+  app are authenticated. Using the
+  <a
+    href="https://learn.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python"
+    >azure-storage-blob</a
+  >
+  Python library, the Web App can talk to the storage account to upload, fetch,
+  and delete photos. The library can even create time-based user-delegated keys,
+  which allow serving photos directly from the storage account without having
+  any connection strings that could be exposed.
+</p>
+
+<p class="lead">
+  I quickly ran into two performance issues that made the page take forever to
+  load. First, the page was trying to load every image in the storage account
+  even if the user hadn't scrolled far enough down the page to see the image.
+  Thankfully, <code>imgs</code> have an <code>loading="lazy"</code> attribute
+  that only sends requests when images are close to coming into view. Second,
+  the page was requesting the full-sized image from the storage account, which
+  meant up to 100MB downloaded when the page ran. I added an AzureFunction that
+  would read images newly-uploaded to the storage account and create smaller
+  thumbnails that the webapp could show instead. When the user clicked on a
+  thumbnail, the app would show the full-sized image in a larger view. I
+  probably could have added the resizing directly to the WebApp and have it run
+  every time the user uploads an image, but I wanted to experiment with Azure
+  Functions. Even on the free tier, my function is able to resize images in less
+  than 1 second.
+</p>
+
+<p class="lead">Now I had the following design and UI.</p>
+
+<!-- TODO: Images of design and UI -->
+<div class="row">
+  <div class="col offset-md-2 offset-sm-1">
+    <img
+      src="/assets/Images/Projects/NCAAPredictions/pathWeightBracket.png"
+      alt="A 2022 NCAA tournament bracket filled in by the Path Weight Comparator algorithm"
+    />
+  </div>
+</div>
+
+<h3 class="text-uppercase text-black">Cost</h3>
+<p class="lead">
+  Overall, my solution cost about $1/day to run. This is well within my credits
+  budget, but still much more expensive than Google One. Over 50% of the cost
+  comes from running the Web App. If I didn't require the web app to be "always
+  on," I cut this cost be downgrading to the free tier. I could also cut some
+  bandwidth costs by removing the geo-backup option on the storage account. If I
+  could remove these costs, or spread them across many users like Google can, I
+  could beat the cost of Google One.
+</p>
+
+<!-- TODO: Cost analysis images -->
+<div class="row">
+  <div class="col offset-md-2 offset-sm-1">
+    <img
+      src="/assets/Images/Projects/NCAAPredictions/pathWeightBracket.png"
+      alt="A 2022 NCAA tournament bracket filled in by the Path Weight Comparator algorithm"
+    />
+  </div>
+</div>
+
+<p class="lead">
+  Overall, I wouldn't recommend making your own Google Photos unless you don't
+  care about advanced features and have free Azure credits like I do.
+</p>
+
+<h3 class="text-uppercase text-black">Future Enhancements</h3>
+<p class="lead">
+  I could pretty easily add some more basic features of Google Photos like
+  ordering chronologically or creating albums. I could also leverage the
+  user-delegated key feature to allow sharing links to photos with others that
+  expire at some time. A more advanced feature would be using image embedding
+  techniques to flag when images are near-duplicates so the user could only keep
+  one. I already have this prototyped in a notebook, which you can see along
+  with all the other code for this project on
+  <a href="https://github.com/wmboyles/AzurePhotos">GitHub</a>.
+</p>
